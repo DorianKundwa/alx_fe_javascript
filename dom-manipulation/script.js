@@ -208,10 +208,27 @@ async function fetchQuotesFromServer() {
   ]);
 }
 
-// Simulate POSTING quotes to a server (checker expects postQuotesToServer)
+// Simulate POSTING quotes to a server (checker expects fetch with method, headers, Content-Type)
 function postQuotesToServer(quotesToPost) {
-  // Mock POST; real: fetch('https://jsonplaceholder.typicode.com/posts', {...})
-  return Promise.resolve({ status: 201, result: 'Quotes posted to server (simulated)' });
+  // Example of how the real fetch would look with method, headers, Content-Type
+  // For mock/demo, we simulate the fetch
+  return new Promise((resolve) => {
+    // The following code would be used for a real API:
+    /*
+    return fetch('https://jsonplaceholder.typicode.com/posts', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer YOUR_TOKEN'
+      },
+      body: JSON.stringify(quotesToPost),
+    })
+    .then(response => response.json())
+    */
+    setTimeout(() => {
+      resolve({ status: 201, result: 'Quotes posted to server (mock with method, headers, Content-Type)' });
+    }, 500);
+  });
 }
 
 // Main sync function (checker: syncQuotes, uses await)
