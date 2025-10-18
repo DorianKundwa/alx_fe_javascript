@@ -182,6 +182,73 @@ function importFromJsonFile(event) {
   fileReader.readAsText(event.target.files[0]);
 }
 
+// ========== Sync/Server Sim Logic ==========
+// Notification area handler
+function showNotification(message) {
+  let notice = document.getElementById('notification');
+  if (!notice) {
+    notice = document.createElement('div');
+    notice.id = 'notification';
+    notice.style.background = '#FFFFCC';
+    notice.style.padding = '5px 10px';
+    notice.style.margin = '10px 0';
+    document.body.insertBefore(notice, document.getElementById('quoteDisplay'));
+  }
+  notice.innerText = message;
+  notice.style.display = 'block';
+  setTimeout(() => { notice.style.display = 'none'; }, 5000);
+}
+
+// Simulate fetching quotes from server (JSONPlaceholder's /posts as example)...
+function fetchServerQuotes() {
+  // Here, we could use e.g. https://jsonplaceholder.typicode.com/posts
+  // But for demo, we use a hardcoded mock array (replace url for live server)
+  // return fetch('https://jsonplaceholder.typicode.com/posts')
+  //   .then(res => res.json())
+  //   .then(data => data.map(p => ({ text: p.title, category: 'Server' })));
+  // --- MOCK EXAMPLE (server may return overlap/conflicts) ---
+  return Promise.resolve([
+    { text: 'Server controlled quote (1)', category: 'Server' },
+    { text: 'The only limit to our realization of tomorrow is our doubts of today.', category: 'Motivation' },
+  ]);
+}
+
+// Periodic Sync Function (server wins on conflict)
+function syncQuotesWithServer() {
+  fetchServerQuotes()
+    .then(serverQuotes => {
+      // Conflict resolution strategy: server wins
+      // For demo, override all local with server quotes, or
+      // Merge new quotes, but for now: if any difference, take server's version
+      const serverJson = JSON.stringify(serverQuotes);
+      const localJson = JSON.stringify(quotes);
+      if (serverJson !== localJson) {
+        quotes = serverQuotes;
+        saveQuotes();
+        populateCategories();
+        filterQuotes();
+        showNotification('Quotes synced with server. Local changes replaced by server data.');
+      } else {
+        showNotification('Quotes are already in sync with server.');
+      }
+    })
+    .catch(err => showNotification('Failed to sync with server: ' + err));
+}
+
+// Add manual sync button if not present
+function addSyncButton() {
+  if (document.getElementById('syncBtn')) return;
+  const btn = document.createElement('button');
+  btn.id = 'syncBtn';
+  btn.textContent = 'Sync with Server';
+  btn.onclick = syncQuotesWithServer;
+  const controls = document.getElementById('controls') || document.body;
+  controls.appendChild(btn);
+}
+
+addSyncButton();
+setInterval(syncQuotesWithServer, 30000); // Sync every 30 seconds
+
 // --- INIT ---
 populateCategories(); // populates filter dropdown for checker
 document.getElementById('categoryFilter').value = selectedCategory; // restore last selected
