@@ -19,8 +19,37 @@ function showRandomQuote() {
   quoteDisplay.innerHTML = `<strong>${quote.category}:</strong> "${quote.text}"`;
 }
 
-// Function to handle adding new quotes
-document.getElementById('addQuoteBtn').addEventListener('click', addQuote);
+function createAddQuoteForm() {
+  // Remove old form if present (prevent duplicating on re-call)
+  const oldForm = document.getElementById('addQuoteFormWrapper');
+  if (oldForm) oldForm.remove();
+
+  const formDiv = document.createElement('div');
+  formDiv.setAttribute('id', 'addQuoteFormWrapper');
+
+  const quoteInput = document.createElement('input');
+  quoteInput.setAttribute('id', 'newQuoteText');
+  quoteInput.setAttribute('type', 'text');
+  quoteInput.setAttribute('placeholder', 'Enter a new quote');
+
+  const categoryInput = document.createElement('input');
+  categoryInput.setAttribute('id', 'newQuoteCategory');
+  categoryInput.setAttribute('type', 'text');
+  categoryInput.setAttribute('placeholder', 'Enter quote category');
+
+  const addBtn = document.createElement('button');
+  addBtn.setAttribute('id', 'addQuoteBtn');
+  addBtn.textContent = 'Add Quote';
+  addBtn.onclick = addQuote;
+
+  formDiv.appendChild(quoteInput);
+  formDiv.appendChild(categoryInput);
+  formDiv.appendChild(addBtn);
+
+  // Insert after quoteDisplay/newQuote button
+  const quoteBtn = document.getElementById('newQuote');
+  quoteBtn.insertAdjacentElement('afterend', formDiv);
+}
 
 function addQuote() {
   const quoteTextInput = document.getElementById('newQuoteText');
@@ -39,3 +68,4 @@ function addQuote() {
 
 // Show a quote on page load
 showRandomQuote();
+createAddQuoteForm();
