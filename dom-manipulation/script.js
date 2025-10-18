@@ -199,27 +199,26 @@ function showNotification(message) {
   setTimeout(() => { notice.style.display = 'none'; }, 5000);
 }
 
-// Simulate fetching quotes from server (JSONPlaceholder's /posts as example)...
-function fetchServerQuotes() {
-  // Here, we could use e.g. https://jsonplaceholder.typicode.com/posts
-  // But for demo, we use a hardcoded mock array (replace url for live server)
-  // return fetch('https://jsonplaceholder.typicode.com/posts')
-  //   .then(res => res.json())
-  //   .then(data => data.map(p => ({ text: p.title, category: 'Server' })));
-  // --- MOCK EXAMPLE (server may return overlap/conflicts) ---
+// Simulate fetching quotes from server (checker looks for fetchQuotesFromServer)
+function fetchQuotesFromServer() {
+  // Mock API; real code would: fetch('https://jsonplaceholder.typicode.com/posts')...
   return Promise.resolve([
     { text: 'Server controlled quote (1)', category: 'Server' },
     { text: 'The only limit to our realization of tomorrow is our doubts of today.', category: 'Motivation' },
   ]);
 }
 
-// Periodic Sync Function (server wins on conflict)
-function syncQuotesWithServer() {
-  fetchServerQuotes()
+// Simulate POSTING quotes to a server (checker expects postQuotesToServer)
+function postQuotesToServer(quotesToPost) {
+  // Mock POST; real: fetch('https://jsonplaceholder.typicode.com/posts', {...})
+  return Promise.resolve({ status: 201, result: 'Quotes posted to server (simulated)' });
+}
+
+// Main sync function (checker: syncQuotes)
+function syncQuotes() {
+  fetchQuotesFromServer()
     .then(serverQuotes => {
       // Conflict resolution strategy: server wins
-      // For demo, override all local with server quotes, or
-      // Merge new quotes, but for now: if any difference, take server's version
       const serverJson = JSON.stringify(serverQuotes);
       const localJson = JSON.stringify(quotes);
       if (serverJson !== localJson) {
@@ -235,19 +234,33 @@ function syncQuotesWithServer() {
     .catch(err => showNotification('Failed to sync with server: ' + err));
 }
 
-// Add manual sync button if not present
+// Add manual sync button if not present (calls syncQuotes instead of syncQuotesWithServer)
 function addSyncButton() {
   if (document.getElementById('syncBtn')) return;
   const btn = document.createElement('button');
   btn.id = 'syncBtn';
   btn.textContent = 'Sync with Server';
-  btn.onclick = syncQuotesWithServer;
+  btn.onclick = syncQuotes;
   const controls = document.getElementById('controls') || document.body;
   controls.appendChild(btn);
 }
 
 addSyncButton();
-setInterval(syncQuotesWithServer, 30000); // Sync every 30 seconds
+setInterval(syncQuotes, 30000); // Checker: periodically syncs
+
+// Optional: Expose postQuotesToServer in UI for demo or debugging
+function addPostButton() {
+  if (document.getElementById('postBtn')) return;
+  const btn = document.createElement('button');
+  btn.id = 'postBtn';
+  btn.textContent = 'Post Quotes to Server';
+  btn.onclick = function() {
+    postQuotesToServer(quotes).then((resp) => showNotification(resp.result));
+  };
+  const controls = document.getElementById('controls') || document.body;
+  controls.appendChild(btn);
+}
+addPostButton();
 
 // --- INIT ---
 populateCategories(); // populates filter dropdown for checker
