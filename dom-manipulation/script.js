@@ -1,24 +1,54 @@
 // Quotes data structure
-let quotes = [
+let defaultQuotes = [
   { text: "The only limit to our realization of tomorrow is our doubts of today.", category: "Motivation" },
   { text: "In the middle of every difficulty lies opportunity.", category: "Inspiration" },
   { text: "To be yourself in a world that is constantly trying to make you something else is the greatest accomplishment.", category: "Self" }
 ];
 
-// Function to display a random quote
-document.getElementById('newQuote').addEventListener('click', showRandomQuote);
+function loadQuotes() {
+  const saved = localStorage.getItem('quotes');
+  if (saved) {
+    try {
+      return JSON.parse(saved);
+    } catch {
+      return [...defaultQuotes];
+    }
+  }
+  return [...defaultQuotes];
+}
 
+function saveQuotes() {
+  localStorage.setItem('quotes', JSON.stringify(quotes));
+}
+
+let quotes = loadQuotes();
+
+// --- SessionStorage for last viewed quote ---
+function saveLastQuoteIndex(index) {
+  sessionStorage.setItem('lastViewedQuoteIndex', String(index));
+}
+
+function getLastQuoteIndex() {
+  const idx = sessionStorage.getItem('lastViewedQuoteIndex');
+  return idx !== null ? parseInt(idx, 10) : null;
+}
+
+// Function to display a random quote
 function showRandomQuote() {
   const quoteDisplay = document.getElementById('quoteDisplay');
   if (quotes.length === 0) {
     quoteDisplay.innerText = 'No quotes available.';
     return;
   }
-  const randomIndex = Math.floor(Math.random() * quotes.length);
+  let randomIndex = Math.floor(Math.random() * quotes.length);
+  saveLastQuoteIndex(randomIndex);
   const quote = quotes[randomIndex];
   quoteDisplay.innerHTML = `<strong>${quote.category}:</strong> "${quote.text}"`;
 }
 
+document.getElementById('newQuote').addEventListener('click', showRandomQuote);
+
+// --- FORM CREATOR ---
 function createAddQuoteForm() {
   // Remove old form if present (prevent duplicating on re-call)
   const oldForm = document.getElementById('addQuoteFormWrapper');
@@ -61,11 +91,68 @@ function addQuote() {
     return;
   }
   quotes.push({ text, category });
+  saveQuotes();
   quoteTextInput.value = '';
   quoteCategoryInput.value = '';
   showRandomQuote();
 }
 
-// Show a quote on page load
+// --- EXPORT ---
+function createJsonExportButton() {
+  const exportBtn = document.createElement('button');
+  exportBtn.textContent = 'Export Quotes (JSON)';
+  exportBtn.onclick = function() {
+    const jsonStr = JSON.stringify(quotes, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'quotes.json';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+  };
+
+  // Insert after add-quote form wrapper
+  const formDiv = document.getElementById('addQuoteFormWrapper');
+  formDiv.insertAdjacentElement('afterend', exportBtn);
+}
+
+// --- IMPORT ---
+function createJsonImportInput() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.id = 'importFile';
+  input.accept = '.json';
+  input.addEventListener('change', importFromJsonFile);
+
+  // Insert after export button
+  const exportBtn = document.querySelector('button[download], button:contains("Export Quotes")');
+  document.body.appendChild(input); // Ensures it is visible even if above selector fails
+}
+
+function importFromJsonFile(event) {
+  const fileReader = new FileReader();
+  fileReader.onload = function(event) {
+    try {
+      const importedQuotes = JSON.parse(event.target.result);
+      if (!Array.isArray(importedQuotes)) throw new Error("File must contain an array of quotes");
+      for (const q of importedQuotes) {
+        if (!q.text || !q.category) throw new Error("Each quote must have text and category");
+      }
+      quotes.push(...importedQuotes);
+      saveQuotes();
+      alert('Quotes imported successfully!');
+      showRandomQuote();
+    } catch (e) {
+      alert('Failed to import: ' + e.message);
+    }
+  };
+  fileReader.readAsText(event.target.files[0]);
+}
+
+// --- INIT ---
 showRandomQuote();
 createAddQuoteForm();
+createJsonExportButton();
+createJsonImportInput();
+// If desired, restore last viewed quote using sessionStorage (optional, could display on load)
