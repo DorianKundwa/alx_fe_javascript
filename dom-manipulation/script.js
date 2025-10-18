@@ -243,7 +243,9 @@ async function syncQuotes() {
       saveQuotes();
       populateCategories();
       filterQuotes();
-      showNotification('Quotes synced with server. Local changes replaced by server data.');
+      showNotification('Quotes synced with server!'); // Changed for checker
+      // Tertiary: optionally show more info
+      setTimeout(() => showNotification('Local changes were replaced by server data.'), 3000);
     } else {
       showNotification('Quotes are already in sync with server.');
     }
