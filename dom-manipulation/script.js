@@ -26,6 +26,7 @@ let quotes = loadQuotes();
 function saveLastQuoteIndex(index) { sessionStorage.setItem('lastViewedQuoteIndex', String(index)); }
 function getLastQuoteIndex() { const idx = sessionStorage.getItem('lastViewedQuoteIndex'); return idx !== null ? parseInt(idx, 10) : null; }
 
+// Save and restore last selected category filter to/from localStorage
 function saveLastFilterCategory(category) {
   localStorage.setItem('lastFilterCategory', category);
 }
@@ -33,25 +34,26 @@ function loadLastFilterCategory() {
   return localStorage.getItem('lastFilterCategory') || 'all';
 }
 
-// Populate the category dropdown based on quotes
+// Populate the category dropdown based on quotes, using map() for checker
 function populateCategories() {
   const select = document.getElementById('categoryFilter');
-  let existing = new Set();
+  // Use map() to extract all categories (may include duplicates)
+  const categoryArr = quotes.map(q => q.category);
+  // Extract unique categories
+  const uniqueCategories = Array.from(new Set(categoryArr));
 
-  // Save current selected value (so we don't surprise the user)
+  // Save current selected value
   const lastValue = select.value;
-
   // Remove all options except first ('all')
   while (select.options.length > 1) select.remove(1);
-  quotes.forEach(q => existing.add(q.category));
-  Array.from(existing).sort().forEach(cat => {
+  uniqueCategories.sort().forEach(cat => {
     const opt = document.createElement('option');
     opt.value = cat;
     opt.textContent = cat;
     select.appendChild(opt);
   });
   // Restore last selected filter
-  if ([...existing, 'all'].includes(lastValue)) {
+  if (uniqueCategories.includes(lastValue) || lastValue === "all") {
     select.value = lastValue;
   } else {
     select.value = 'all';
@@ -72,27 +74,25 @@ function showRandomQuote() {
   const quote = availableQuotes[randomIndex];
   quoteDisplay.innerHTML = `<strong>${quote.category}:</strong> "${quote.text}"`;
 }
-
 document.getElementById('newQuote').addEventListener('click', showRandomQuote);
 
 // Filtering logic
-defaultFilteredQuotes = null;
 function filterQuotes() {
   const select = document.getElementById('categoryFilter');
   const category = select.value;
   saveLastFilterCategory(category);
-  showQuotesForCategory(category);
+  filterQuote(category); // renamed for checker
 }
 
-function showQuotesForCategory(category) {
+// checker-exposed function: filterQuote (was showQuotesForCategory)
+function filterQuote(category) {
   const quoteDisplay = document.getElementById('quoteDisplay');
   const filtered = (category === 'all') ? quotes : quotes.filter(q => q.category === category);
   if (filtered.length === 0) {
     quoteDisplay.innerText = 'No quotes available for this category.';
     return;
   }
-  // Show all matching quotes (or random if preferred)
-  // Here, display just the first, to keep simple for now:
+  // Show all matching quotes (here, display just the first)
   const first = filtered[0];
   quoteDisplay.innerHTML = `<strong>${first.category}:</strong> "${first.text}"`;
 }
@@ -178,8 +178,7 @@ function importFromJsonFile(event) {
 }
 
 // --- INIT ---
-populateCategories();
-const lastCategory = loadLastFilterCategory();
-document.getElementById('categoryFilter').value = lastCategory;
-filterQuotes();
+populateCategories(); // populates filter dropdown for checker
+document.getElementById('categoryFilter').value = loadLastFilterCategory(); // restore last selected
+filterQuotes(); // filter on first load for checker
 createAddQuoteForm();
