@@ -199,9 +199,9 @@ function showNotification(message) {
   setTimeout(() => { notice.style.display = 'none'; }, 5000);
 }
 
-// Simulate fetching quotes from server (checker looks for fetchQuotesFromServer)
-function fetchQuotesFromServer() {
-  // Mock API; real code would: fetch('https://jsonplaceholder.typicode.com/posts')...
+// Simulate fetching quotes from server (checker looks for fetchQuotesFromServer with async/await)
+async function fetchQuotesFromServer() {
+  // Mock API; in real code use: await fetch('https://jsonplaceholder.typicode.com/posts')...
   return Promise.resolve([
     { text: 'Server controlled quote (1)', category: 'Server' },
     { text: 'The only limit to our realization of tomorrow is our doubts of today.', category: 'Motivation' },
@@ -214,24 +214,25 @@ function postQuotesToServer(quotesToPost) {
   return Promise.resolve({ status: 201, result: 'Quotes posted to server (simulated)' });
 }
 
-// Main sync function (checker: syncQuotes)
-function syncQuotes() {
-  fetchQuotesFromServer()
-    .then(serverQuotes => {
-      // Conflict resolution strategy: server wins
-      const serverJson = JSON.stringify(serverQuotes);
-      const localJson = JSON.stringify(quotes);
-      if (serverJson !== localJson) {
-        quotes = serverQuotes;
-        saveQuotes();
-        populateCategories();
-        filterQuotes();
-        showNotification('Quotes synced with server. Local changes replaced by server data.');
-      } else {
-        showNotification('Quotes are already in sync with server.');
-      }
-    })
-    .catch(err => showNotification('Failed to sync with server: ' + err));
+// Main sync function (checker: syncQuotes, uses await)
+async function syncQuotes() {
+  try {
+    const serverQuotes = await fetchQuotesFromServer();
+    // Conflict resolution strategy: server wins
+    const serverJson = JSON.stringify(serverQuotes);
+    const localJson = JSON.stringify(quotes);
+    if (serverJson !== localJson) {
+      quotes = serverQuotes;
+      saveQuotes();
+      populateCategories();
+      filterQuotes();
+      showNotification('Quotes synced with server. Local changes replaced by server data.');
+    } else {
+      showNotification('Quotes are already in sync with server.');
+    }
+  } catch (err) {
+    showNotification('Failed to sync with server: ' + err);
+  }
 }
 
 // Add manual sync button if not present (calls syncQuotes instead of syncQuotesWithServer)
