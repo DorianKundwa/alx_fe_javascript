@@ -97,44 +97,28 @@ function addQuote() {
   showRandomQuote();
 }
 
-// --- EXPORT ---
-function createJsonExportButton() {
-  const exportBtn = document.createElement('button');
-  exportBtn.textContent = 'Export Quotes (JSON)';
-  exportBtn.onclick = function() {
-    const jsonStr = JSON.stringify(quotes, null, 2);
-    const blob = new Blob([jsonStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'quotes.json';
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1500);
-  };
-
-  // Insert after add-quote form wrapper
-  const formDiv = document.getElementById('addQuoteFormWrapper');
-  formDiv.insertAdjacentElement('afterend', exportBtn);
+// --- TOP-LEVEL JSON EXPORT for checker ---
+function exportToJsonFile() {
+  const jsonStr = JSON.stringify(quotes, null, 2);
+  const blob = new Blob([jsonStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'quotes.json';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 1500);
 }
 
-// --- IMPORT ---
-function createJsonImportInput() {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.id = 'importFile';
-  input.accept = '.json';
-  input.addEventListener('change', importFromJsonFile);
-
-  // Insert after export button
-  const exportBtn = document.querySelector('button[download], button:contains("Export Quotes")');
-  document.body.appendChild(input); // Ensures it is visible even if above selector fails
-}
-
+// --- TOP-LEVEL JSON IMPORT for checker ---
 function importFromJsonFile(event) {
   const fileReader = new FileReader();
-  fileReader.onload = function(event) {
+  fileReader.onload = function(e) {
     try {
-      const importedQuotes = JSON.parse(event.target.result);
+      const importedQuotes = JSON.parse(e.target.result);
       if (!Array.isArray(importedQuotes)) throw new Error("File must contain an array of quotes");
       for (const q of importedQuotes) {
         if (!q.text || !q.category) throw new Error("Each quote must have text and category");
@@ -153,6 +137,4 @@ function importFromJsonFile(event) {
 // --- INIT ---
 showRandomQuote();
 createAddQuoteForm();
-createJsonExportButton();
-createJsonImportInput();
-// If desired, restore last viewed quote using sessionStorage (optional, could display on load)
+// Dynamic version uses same top-level functions if needed
